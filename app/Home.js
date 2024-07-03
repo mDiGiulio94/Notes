@@ -17,7 +17,7 @@ import CustomModal from "./Components/CustomModal"
 
 export default function Home({ StatiGlobali, navigation }) {
   //DEstrutturazione degli stati globali
-  const { allNotes, setNote, userId, prendiNote } = StatiGlobali;
+  const { allNotes, setNote, userId, prendiNote, offline } = StatiGlobali;
 
   //Variabili di stato
   const [modalVisible, setModalVisible] = useState(false);
@@ -47,7 +47,6 @@ export default function Home({ StatiGlobali, navigation }) {
 const removeNote = (itemId) => {
   const db = getDatabase();
   const notaRef = ref(db, "users/" + userId + "/notes/" + itemId);
-
   remove(notaRef)
     .then(() => {
       console.log("nota rimossa con successo");
@@ -69,23 +68,38 @@ const removeNote = (itemId) => {
         <ScrollView style={{ flex: 1 }}>
           <ThemedView style={styled.container}>
             {/* ? significa "se esistono" */}
-            {notesArray.length > 0 ? (
-              notesArray?.map((nota, index) => (
-                <ThemedView style={styled.containerNota} key={index}>
+
+            {offline && (
+              <ThemedView style={styled.containerOffline}>
+                <Feather name="wifi-off" size={20} color={"black"} />
+                <ThemedText>Offline - Modalità sola lettura</ThemedText>
+              </ThemedView>
+            )}
+
+            {/* Copia questa parte dell'!offline da danilo che non ci sei riuscito */}
+            {notesArray?.map((nota, index) => (
+              <ThemedView style={styled.containerNota} key={index}>
+                {!offline && (
                   <ThemedView style={styled.containerBtnUpdate}>
-                    <TouchableOpacity onPress={null}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate("ModificaNote", { nota: nota })
+                      }
+                    >
                       <FontAwesome5 name="pen" size={20} color={"black"} />
                     </TouchableOpacity>
                   </ThemedView>
+                )}
+                <TouchableOpacity onPress={() => handlePress(nota)}>
+                  <ThemedText style={styled.containerNota.titolo}>
+                    {nota.titolo}
+                  </ThemedText>
+                  <ThemedText style={styled.containerNota.testo}>
+                    {nota.testo}
+                  </ThemedText>
+                </TouchableOpacity>
 
-                  <TouchableOpacity onPress={() => handlePress(nota)}>
-                    <ThemedText style={styled.containerNota.titolo}>
-                      {nota.titolo}
-                    </ThemedText>
-                    <ThemedText style={styled.containerNota.testo}>
-                      {nota.testo}
-                    </ThemedText>
-                  </TouchableOpacity>
+                {!offline && (
                   <ThemedView style={styled.containerBtnDelete}>
                     <TouchableOpacity
                       onPress={() => delateItem(nota.id, nota.titolo)}
@@ -93,11 +107,9 @@ const removeNote = (itemId) => {
                       <Feather name="trash-2" size={20} color={"black"} />
                     </TouchableOpacity>
                   </ThemedView>
-                </ThemedView>
-              ))
-            ) : (
-              <ThemedText>Nessuna Nota</ThemedText>
-            )}
+                )}
+              </ThemedView>
+            ))}
           </ThemedView>
           <CustomModal
             isVisible={modalVisible}

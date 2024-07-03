@@ -15,7 +15,6 @@ import { getDatabase, ref, set, push  } from "firebase/database";
 export default function CreateNote(props) {
 
   const { note, userId, prendiNote } = props.StatiGlobali;
-  
 
 //Variabili di stato
   const [titolo, setTitolo] = useState("");
@@ -44,6 +43,7 @@ export default function CreateNote(props) {
     set(newNotesRef, body)
       .then(() => {
         console.log("dati della nota salvati");
+    
         prendiNote()
         props.navigation.navigate('Home')
       }).catch((error) => {

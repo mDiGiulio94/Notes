@@ -1,6 +1,6 @@
 //Import Librerie
 import React, { useState, useEffect } from "react";
-import { StyleSheet, TouchableOpacity, TextInput, Alert, TouchableWithoutFeedback, Keyboard } from "react-native";
+import { StyleSheet, TouchableOpacity, TextInput, Alert, TouchableWithoutFeedback, Keyboard, Linking } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 
@@ -12,6 +12,7 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "fire
 import { getDatabase, ref, set } from "firebase/database"
 
 import { Ionicons } from "@expo/vector-icons";
+import Checkbox from "expo-checkbox";
 
 export default function Login({ StatiGlobali }) {
   //Destrutturazione
@@ -35,6 +36,8 @@ export default function Login({ StatiGlobali }) {
   const [isButtonEnabled, setIsButtonEnabled] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState("");
+
+  const [ isChecked, setIsChecked] = useState(false)
 
   // ------------------------------------------------------------------
 
@@ -105,8 +108,26 @@ export default function Login({ StatiGlobali }) {
       });
   };
 
+
+
+  //Metodo collegamento alla privacy
+// è obbligatorio per legge
+  const openTerms = () => {
+    const url = 'http://www.google.com'
+    //Verifica se l'url è disponibile e funzionante
+    Linking.canOpenURL(url)
+      .then((supported)=> {
+        if (supported) {
+      //Apre l'url
+  Linking.openURL(url)
+        } else {
+          console.log('link impossibile da raggiungere')
+}
+      })
+  }
+
   useEffect(() => {
-    if (nome !== "" && cognome !== "" && email !== "" && password !== "") {
+    if (nome !== "" && cognome !== "" && email !== "" && password !== "" ) {
       if (!isValidEmail(email)) {
         console.log("la email inserita non è valida");
         setErrorMessage("la email inserita non è valida");
@@ -123,9 +144,13 @@ export default function Login({ StatiGlobali }) {
             setErrorMessage("la password inserita è valida");
             setIsButtonEnabled(false);
           } else {
-            console.log("le password combaciano");
-            setIsButtonEnabled(true);
-            setErrorMessage("");
+            if (isChecked === false) {
+              setErrorMessage("le condizioni non sono accettate")
+              setIsButtonEnabled(false)
+            } else {
+              setIsButtonEnabled(true);
+              setErrorMessage("");
+            }
           }
         }
       }
@@ -133,7 +158,7 @@ export default function Login({ StatiGlobali }) {
       console.log("pulsante disabilitato a causa di errori");
       setIsButtonEnabled(false);
     }
-  }, [nome, cognome, email, password, ripetiPassword]);
+  }, [nome, cognome, email, password, ripetiPassword, isChecked]);
 
   return (
     <>
@@ -168,24 +193,24 @@ export default function Login({ StatiGlobali }) {
             />
 
             <ThemedView style={styled.containerPassword}>
-                <TextInput
-                  style={styled.inputPassword}
-                  placeholder="Password"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!passwordVisible}
+              <TextInput
+                style={styled.inputPassword}
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!passwordVisible}
+              />
+              <TouchableOpacity
+                style={styled.iconEye}
+                onPress={() => setPasswordVisible(!passwordVisible)}
+              >
+                <Ionicons
+                  name={passwordVisible ? "eye" : "eye-off"}
+                  size={24}
+                  color="gray"
                 />
-                <TouchableOpacity
-                  style={styled.iconEye}
-                  onPress={() => setPasswordVisible(!passwordVisible)}
-                >
-                  <Ionicons
-                    name={passwordVisible ? "eye" : "eye-off"}
-                    size={24}
-                    color="gray"
-                  />
-                </TouchableOpacity>
-              </ThemedView>
+              </TouchableOpacity>
+            </ThemedView>
             {/* <ThemedView style={styled.containerPassword}>
               <TextInput
                 style={styled.inputPassword}
@@ -206,18 +231,29 @@ export default function Login({ StatiGlobali }) {
               </TouchableOpacity>
             </ThemedView> */}
             {registrazione && (
-              <ThemedView style={styled.containerPassword}>
-                <TextInput
-                  style={styled.inputPassword}
-                  placeholder="Ripeti Password"
-                  value={ripetiPassword}
-                  onChangeText={setRipetiPassword}
-                  secureTextEntry={!passwordVisible}
-                />
-                {/* <TouchableOpacity style={styled.iconEye} onPress={() => setPasswordVisible(!passwordVisible)}>
+              <>
+                <ThemedView style={styled.containerPassword}>
+                  <TextInput
+                    style={styled.inputPassword}
+                    placeholder="Ripeti Password"
+                    value={ripetiPassword}
+                    onChangeText={setRipetiPassword}
+                    secureTextEntry={!passwordVisible}
+                  />
+                  {/* <TouchableOpacity style={styled.iconEye} onPress={() => setPasswordVisible(!passwordVisible)}>
                                     <Ionicons name={passwordVisible ? 'eye' : 'eye-off'} size={24} color='gray' />
                                 </TouchableOpacity> */}
-              </ThemedView>
+                </ThemedView>
+                <ThemedView style={styled.containerPrivacy}>
+                  <Checkbox
+                    style={styled.checkbox}
+                    value={isChecked}
+                    onValueChange={setIsChecked}
+                    color={"grey"}
+                  />
+                  <ThemedText>Accetto i <TouchableOpacity onPress={() => {openTerms}}><ThemedText style={styled.link}>Termini</ThemedText></TouchableOpacity> e condizioni</ThemedText>
+                </ThemedView>
+              </>
             )}
             {/* container dei bottoni */}
           </ThemedView>
@@ -228,8 +264,9 @@ export default function Login({ StatiGlobali }) {
                   <ThemedText style={styled.textBtn}>Accedi</ThemedText>
                 </TouchableOpacity>
                 <ThemedText style={styled.text}>
-                  Se non sei registrato, clicca qui per
-                  <TouchableOpacity onPress={() => setRegistrazione(true)}><ThemedText style={[styled.textGrass, styled.link]}> registrarti
+                  Se non sei registrato, clicca qui per <TouchableOpacity onPress={() => setRegistrazione(true)}>
+<ThemedText style={[styled.textGrass, styled.link]}>
+                      registrarti
                     </ThemedText>
                   </TouchableOpacity>
                 </ThemedText>
@@ -247,8 +284,9 @@ export default function Login({ StatiGlobali }) {
                   <ThemedText style={styled.textBtn}>Registrati</ThemedText>
                 </TouchableOpacity>
                 <ThemedText style={styled.text}>
-                  Se sei già registrato, clicca qui per
-                  <TouchableOpacity onPress={() => setRegistrazione(false)}><ThemedText style={[styled.textGrass, styled.link]}> accedere
+                  Se sei già registrato, clicca qui per <TouchableOpacity onPress={() => setRegistrazione(false)}>
+                    <ThemedText style={[styled.textGrass, styled.link]}>
+                      accedere
                     </ThemedText>
                   </TouchableOpacity>
                 </ThemedText>
@@ -340,7 +378,26 @@ const styled = StyleSheet.create({
     right: 20,
     top: 18,
   },
+
+  containerPrivacy: {
+    backgroundColor: null,
+    flexDirection: "row",
+    alignItems: "baseline",
+  },
+
+  checkbox: {
+    marginTop: 15,
+    marginRight: 10,
+  },
+
+  link: {
+    fontWeight: "bold",
+    marginTop: 4,
+  },
 });
+
+
+
 
 //colore del grigio lightgrey o d0d0
 

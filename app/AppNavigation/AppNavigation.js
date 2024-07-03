@@ -26,6 +26,7 @@ import Home from "../Home";
 import Note from "../Note";
 import CreateNote from "../CreateNote";
 import Login from "../Login";
+import ModificaNote from "../ModificaNote"
 
 //Impostazine della navigazione
 const Stack = createNativeStackNavigator();
@@ -59,10 +60,17 @@ export default function AppNavigation({ StatiGlobali }) {
                 {(props) => <Note {...props} StatiGlobali={StatiGlobali} />}
               </Stack.Screen>
               <Stack.Screen name="CreateNote">
-                {(props) => <CreateNote {...props} StatiGlobali={StatiGlobali} />}
+                {(props) => (
+                  <CreateNote {...props} StatiGlobali={StatiGlobali} />
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="ModificaNote">
+                {(props) => (
+                  <ModificaNote {...props} StatiGlobali={StatiGlobali} />
+                )}
               </Stack.Screen>
             </Stack.Navigator>
-            <Footer />
+            <Footer StatiGlobali={StatiGlobali} />
           </>
         ) : (
           // se non loggato questo

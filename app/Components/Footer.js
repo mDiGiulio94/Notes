@@ -12,10 +12,11 @@ import Icon from "react-native-vector-icons/FontAwesome5";
 import IconFont from "react-native-vector-icons/FontAwesome6";
 
 
-export default function Footer() {
-
+export default function Footer({ StatiGlobali }) {
   //Navigazione
   const navigation = useNavigation();
+
+     const { offline } = StatiGlobali;
 
   return (
     <ThemedView style={styles.footer}>
@@ -26,16 +27,20 @@ export default function Footer() {
         <Icon name="home" size={30} color="#000" />
         <ThemedText style={styles.text}>Home</ThemedText>
       </TouchableOpacity>
-      <TouchableOpacity
-        onPress={() => navigation.navigate("CreateNote")}
-        style={styles.contenitore}
-      >
-        <IconFont name="notes-medical" size={30} color="#000" />
-        <ThemedText style={styles.text}>Crea nota</ThemedText>
-      </TouchableOpacity>
+
+      {!offline && (
+        <TouchableOpacity
+          onPress={() => navigation.navigate("CreateNote")}
+          style={styles.contenitore}
+        >
+          <IconFont name="notes-medical" size={30} color="#000" />
+          <ThemedText style={styles.text}>Crea nota</ThemedText>
+        </TouchableOpacity>
+      )}
     </ThemedView>
   );
 }
+
 
 const styles = StyleSheet.create({
   footer: {
