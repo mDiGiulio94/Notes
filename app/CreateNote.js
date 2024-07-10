@@ -1,6 +1,6 @@
 //Librerie
 import React, { useEffect, useState } from "react";
-import { StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Keyboard, TextInput } from "react-native";
+import { StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Keyboard, TextInput, Image } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -11,49 +11,105 @@ import { ThemedView } from "@/components/ThemedView";
 //ogni oggetto deve evare una chiave univoca SU FIREBASE, prefereisce di più UN OGGETTO DI OGGETTI che un ARRAY DI OGGETTI
 import { getDatabase, ref, set, push  } from "firebase/database";
 
+//Import image picker di expo
+import * as ImagePicker from 'expo-image-picker'
+
+//Import dello storage il ref è per non condonderlo col ref del database
+import{ getDownloadURL, ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage'
+import { storage } from "./Firebase";
 
 export default function CreateNote(props) {
-
   const { note, userId, prendiNote } = props.StatiGlobali;
 
-//Variabili di stato
+  //Variabili di stato
   const [titolo, setTitolo] = useState("");
   const [testo, setTesto] = useState("");
 
+  const [imageUrl, setImageUrl] = useState(null);
 
   //Funzione per il salvataggio di una nuova nota sul database
   const saveNote = async () => {
-  try {
-    const db = getDatabase()
-    //questo crea una nuova nota nel database
-    const notesRef = ref(db, 'users/' + userId + "/notes")
-    //Questo invece genera un identificatore univoco(id)
-    const newNotesRef = push(notesRef)
+    try {
+      const db = getDatabase();
+      //questo crea una nuova nota nel database
+      const notesRef = ref(db, "users/" + userId + "/notes");
+      //Questo invece genera un identificatore univoco(id)
+      const newNotesRef = push(notesRef);
 
-    //impostazione body del push
-    const body = {
-      id: newNotesRef.key.toString(),
-      titolo: titolo,
-      testo: testo,
-      data: Date.now()
+      //impostazione body del push
+      const body = {
+        id: newNotesRef.key.toString(),
+        titolo: titolo,
+        testo: testo,
+        data: Date.now(),
+        imageUrl: imageUrl,
+      };
+
+      //impostare l'oggetto il push ha bisogno del PERCORSO e DEL BODY come parametri
+      set(newNotesRef, body)
+        .then(() => {
+          console.log("dati della nota salvati");
+
+          prendiNote();
+          props.navigation.navigate("Home");
+        })
+        .catch((error) => {
+          console.log("errore creazione della nota: ", error);
+        });
+    } catch (error) {
+      console.log("errore nel salvataggio: ", error);
     }
+  };
+
+  //METODO SELEZIONE IMMAGINE
+  const selectImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.5,
+      // aspect: [
+      //   1,1 o 4,3 o 16,9 serve per impostare volendo la risoluzione immagine
+      // ]
+      // base64: true conversione dell'immagine in base64
+    });
+    //se result è andato a buon fine
+    if (!result.canceled) {
+      const source = { uri: result.assets[0].uri };
+      uploadImage(source.uri);
+    }
+  };
+
+  //Upload Image
+  const uploadImage = async (uri) => {
+    try {
+      //aspetta che abbia funzionato fetch uri
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const filename = uri.substring(uri.lastIndexOf("/") + 1);
+      const storageReference = storageRef(storage, `images/${filename}`);
+      await uploadBytes(storageReference, blob);
+
+      //prendo l'url del bucket nello storage e lo metto in setImageUrl
+      const url = await getDownloadURL(storageReference);
+      setImageUrl(url);
+      console.log("immagine caricata con successo", url);
+    } catch (error) {
+      console.error("ci sono stati errori nel caricamento", error);
+    }
+  };
 
 
-    //impostare l'oggetto il push ha bisogno del PERCORSO e DEL BODY come parametri
-    set(newNotesRef, body)
-      .then(() => {
-        console.log("dati della nota salvati");
-    
-        prendiNote()
-        props.navigation.navigate('Home')
-      }).catch((error) => {
-            console.log("errore creazione della nota: ", error);
-
-      })
-  } catch (error) {
-    console.log("errore nel salvataggio: ", error)
+  //Metodo eliminazione immagine
+  const deleteImage = async (noteImageUrl) => {
+    try {
+      const imageRef = storageRef(storage, noteImageUrl);
+      await deleteObject(imageRef);
+      console.log('immagine eliminata')
+      setImageUrl(null)
+    } catch (error) {
+      console.error("errore nell'eliminazione", error)
+    }
   }
-}
 
 
   return (
@@ -76,7 +132,29 @@ export default function CreateNote(props) {
             multiline={true}
           />
 
-          <TouchableOpacity style={[styled.btn]} onPress={ saveNote }>
+          {!imageUrl && (
+            <TouchableOpacity style={styled.btn} onPress={selectImage}>
+              <ThemedText style={styled.btn.testo}>
+                SELEZIONA IMMAGINE
+              </ThemedText>
+            </TouchableOpacity>
+          )}
+
+          {imageUrl && (
+            <>
+              <ThemedView style={styled.imagePreview}>
+                <Image source={{ uri: imageUrl }} style={styled.image} />
+              </ThemedView>
+              <TouchableOpacity
+                style={styled.btn}
+                onPress={() => deleteImage(imageUrl)}
+              >
+                <ThemedText style={styled.btnTesto}>ELIMINA FOTO</ThemedText>
+              </TouchableOpacity>
+            </>
+          )}
+
+          <TouchableOpacity style={[styled.btn]} onPress={saveNote}>
             <ThemedText>Inserisci Nota</ThemedText>
           </TouchableOpacity>
         </ThemedView>
@@ -151,6 +229,13 @@ const styled = StyleSheet.create({
     testo: { fontWeight: 100 },
   },
 
+  imagePreview: {
+    marginTop: 10,
+    alignItems: "center",
+    height: 200,
+    backgroundColor: null,
+  },
+
 //Stili input
 
   input: {
@@ -167,9 +252,14 @@ const styled = StyleSheet.create({
   btn: {
     alignItems: "center",
     marginTop: 20,
-    testo: {
+  },
 
-    }
+  //immagine
+
+  image: {
+    width: "100%",
+    height: 180,
+    resizeMode: "contain",
   }
 });
 

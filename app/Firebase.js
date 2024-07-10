@@ -20,15 +20,15 @@
 // export { auth };
 
 import { initializeApp, getApps } from "firebase/app";
-import {
-  getAuth,
-  initializeAuth,
-  getReactNativePersistence,
-} from "firebase/auth";
+import { getAuth,initializeAuth,getReactNativePersistence,} from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { firebaseConfig } from "../firebase-config";
 
-let auth;
+//Import dello storage
+import {getStorage} from 'firebase/storage'
+
+//due variabili di tipo let
+let auth, storage;
 
 // Verifica se l'app Firebase è già stata inizializzata
 if (getApps().length === 0) {
@@ -40,6 +40,7 @@ if (getApps().length === 0) {
   auth = initializeAuth(app, {
     persistence: getReactNativePersistence(AsyncStorage),
   });
+  storage = getStorage(app)
 } else {
   // Se l'app Firebase è già stata inizializzata, ottieni l'istanza esistente
   const app = getApps()[0];
@@ -50,7 +51,8 @@ if (getApps().length === 0) {
     initializeAuth(app, {
       persistence: getReactNativePersistence(AsyncStorage),
     });
+    storage = getStorage(app);
 }
 
 // Esporta ciò che ti serve in altri file/componenti
-export { auth };
+export { auth, storage };

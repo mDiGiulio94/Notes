@@ -29,13 +29,23 @@ export default function Footer({ StatiGlobali }) {
       </TouchableOpacity>
 
       {!offline && (
-        <TouchableOpacity
-          onPress={() => navigation.navigate("CreateNote")}
-          style={styles.contenitore}
-        >
-          <IconFont name="notes-medical" size={30} color="#000" />
-          <ThemedText style={styles.text}>Crea nota</ThemedText>
-        </TouchableOpacity>
+        <>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("CreateNote")}
+            style={styles.contenitore}
+          >
+            <IconFont name="notes-medical" size={30} color="#000" />
+            <ThemedText style={styles.text}>Crea nota</ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate("AskBot")}
+            style={styles.contenitore}
+          >
+            <Icon name="robot" size={30} color="#000" />
+            <ThemedText style={styles.text}>Chiedi al bot</ThemedText>
+          </TouchableOpacity>
+        </>
       )}
     </ThemedView>
   );

@@ -19,8 +19,8 @@ import { useRoute } from "@react-navigation/native";
 //ogni oggetto deve evare una chiave univoca SU FIREBASE, prefereisce di più UN OGGETTO DI OGGETTI che un ARRAY DI OGGETTI
 import { getDatabase, ref, update } from "firebase/database";
 
-export default function ModificaNote(props) {
-    const { note, userId, prendiNote } = props.StatiGlobali;
+export default function ModificaNote({StatiGlobali, navigation}) {
+    const { note, userId, prendiNote } = StatiGlobali;
 
     const route = useRoute();
 
@@ -51,7 +51,7 @@ export default function ModificaNote(props) {
           console.log("Nota Modificata con successo");
 
           prendiNote();
-          props.navigation.navigate("Home");
+          navigation.navigate("Home");
         })
         .catch((error) => {
           console.log("errore modifica della nota: ", error);
@@ -93,13 +93,13 @@ export default function ModificaNote(props) {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styled.btn]}
-              onPress={() => props.navigation.navigate("Home")}
+              onPress={() => navigation.navigate("Home")}
             >
               <ThemedText>Annulla modifica</ThemedText>
             </TouchableOpacity>
           </ThemedView>
         </ThemedView>
-        {/* 
+        {/*
         <TouchableOpacity
           style={styled.tornaIndetro}
           onPress={() => props.navigation.navigate("Home")}

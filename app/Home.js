@@ -1,23 +1,28 @@
+//Import Componenti
+import CustomModal from "./Components/CustomModal";
+
 //Import Librerie
 import React, { useState, useEffect } from "react";
-import { TouchableOpacity, ScrollView, StyleSheet } from "react-native";
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { TouchableOpacity, ScrollView, StyleSheet, Image } from "react-native";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
 
 //Import delle icone
 import { FontAwesome5 } from "@expo/vector-icons";
 import { Feather } from "@expo/vector-icons";
 
 //Import Firebase, del Database e delle Crud
-import { getDatabase, ref, remove} from "firebase/database";
+import { getDatabase, ref, remove } from "firebase/database";
 
-//Import Componenti
-import CustomModal from "./Components/CustomModal"
-
+//Import dello storage il ref è per non condonderlo col ref del database
+import { ref as storageRef, deleteObject } from "firebase/storage";
+import { storage } from "./Firebase";
 
 export default function Home({ StatiGlobali, navigation }) {
   //DEstrutturazione degli stati globali
   const { allNotes, setNote, userId, prendiNote, offline } = StatiGlobali;
+
+  const imgOffline = "../assets/images/offline.png";
 
   //Variabili di stato
   const [modalVisible, setModalVisible] = useState(false);
@@ -32,79 +37,111 @@ export default function Home({ StatiGlobali, navigation }) {
   };
 
   //Metodo per la delate
-  const delateItem = (id, titolo) => {
-    setItemToDelete({ id: id, titolo: titolo });
+  const deleteItem = (id, titolo, imageUrl) => {
+    const notaDaEliminare = { id: id, titolo: titolo, imageUrl: imageUrl };
+    setItemToDelete(notaDaEliminare);
     setModalVisible(true);
   };
 
   //Metodo per la conferma del delete
-  const confirmDelateItem = (itemId) => {
+  const confirmDeleteItem = (item) => {
     setModalVisible(false);
-    removeNote(itemId);
+    delateImage(item.imageUrl);
+    removeNote(item.id);
   };
 
   //Metodo per rimuovere l'item dal database
-const removeNote = (itemId) => {
-  const db = getDatabase();
-  const notaRef = ref(db, "users/" + userId + "/notes/" + itemId);
-  remove(notaRef)
-    .then(() => {
-      console.log("nota rimossa con successo");
-      prendiNote();
-    })
-    .catch((error) => {
-      console.error("errore nella rimozione nota");
-    });
-};
+  const removeNote = (itemId) => {
+    const db = getDatabase();
+    const notaRef = ref(db, "users/" + userId + "/notes/" + itemId);
+    remove(notaRef)
+      .then(() => {
+        console.log("nota rimossa con successo");
+        prendiNote();
+      })
+      .catch((error) => {
+        console.error("errore nella rimozione nota", error);
+      });
+  };
+
+  //Split trasforma in array una stringa
+
+  //Metodo eliminazione immagine
+  const delateImage = async (noteImageUrl) => {
+    try {
+      //nel caso avessio un path
+      // const path = decodeURIComponent(noteImageUrl.split('/o/')[1].split(/?/)[0])
+      const imageRef = storageRef(storage, noteImageUrl);
+      await deleteObject(imageRef);
+      console.log("immagine eliminata");
+    } catch (error) {
+      console.error("errore nell'eliminazione", error);
+    }
+  };
 
   //prende i valori di un oggetto e li trasforma in un array in modo tale da permettere il ciclo
   const notesArray = Object.values(allNotes).sort((a, b) => {
     return b.data - a.data;
   });
 
+  console.log("Questo è notesArray in home ", notesArray);
+
   return (
     <>
       {notesArray.length > 0 ? (
-        <ScrollView style={{ flex: 1 }}>
-          <ThemedView style={styled.container}>
-            {/* ? significa "se esistono" */}
-
+        <ScrollView style={styles.scroll}>
+          <ThemedView style={styles.container}>
             {offline && (
-              <ThemedView style={styled.containerOffline}>
-                <Feather name="wifi-off" size={20} color={"black"} />
-                <ThemedText>Offline - Modalità sola lettura</ThemedText>
-              </ThemedView>
+              <>
+                <Image source={require(imgOffline)} style={styles.offline} />
+
+                <ThemedView style={styles.containerOffline}>
+                  <Feather name="wifi-off" size={20} color={"black"} />
+                  <ThemedText>Offline - Modalità sola lettura</ThemedText>
+                </ThemedView>
+              </>
             )}
 
-            {/* Copia questa parte dell'!offline da danilo che non ci sei riuscito */}
-            {notesArray?.map((nota, index) => (
-              <ThemedView style={styled.containerNota} key={index}>
+            {notesArray.map((nota, index) => (
+              <ThemedView style={styles.containerNota} key={index}>
                 {!offline && (
-                  <ThemedView style={styled.containerBtnUpdate}>
+                  <ThemedView style={styles.containerBtnUpdate}>
                     <TouchableOpacity
                       onPress={() =>
                         navigation.navigate("ModificaNote", { nota: nota })
                       }
                     >
-                      <FontAwesome5 name="pen" size={20} color={"black"} />
+                      <FontAwesome5 name="pen" size={20} color="black" />
                     </TouchableOpacity>
                   </ThemedView>
                 )}
-                <TouchableOpacity onPress={() => handlePress(nota)}>
-                  <ThemedText style={styled.containerNota.titolo}>
+
+                <TouchableOpacity
+                  onPress={() => handlePress(nota)}
+                  style={styles.containerCorpoNota}
+                >
+                  {nota.imageUrl && (
+                    <Image
+                      source={{ uri: nota.imageUrl }}
+                      style={styles.image}
+                    />
+                  )}
+                  <ThemedText style={styles.containerNota.titolo}>
                     {nota.titolo}
                   </ThemedText>
-                  <ThemedText style={styled.containerNota.testo}>
+                  <ThemedText style={styles.containerNota.testo}>
                     {nota.testo}
                   </ThemedText>
                 </TouchableOpacity>
 
                 {!offline && (
-                  <ThemedView style={styled.containerBtnDelete}>
+                  <ThemedView style={styles.containerBtnDelete}>
                     <TouchableOpacity
-                      onPress={() => delateItem(nota.id, nota.titolo)}
+                      onPress={() =>
+                        deleteItem(nota.id, nota.titolo, nota.imageUrl)
+                      }
                     >
-                      <Feather name="trash-2" size={20} color={"black"} />
+                      <Feather name="trash-2" size={20} color="black" />
                     </TouchableOpacity>
                   </ThemedView>
                 )}
@@ -113,13 +150,13 @@ const removeNote = (itemId) => {
           </ThemedView>
           <CustomModal
             isVisible={modalVisible}
-            onConfirm={confirmDelateItem}
+            onConfirm={confirmDeleteItem}
             onCancel={() => setModalVisible(false)}
             item={itemToDelate}
           />
         </ScrollView>
       ) : (
-        <ThemedView style={styled.centro}>
+        <ThemedView style={styles.centro}>
           <ThemedText>Nessuna nota</ThemedText>
         </ThemedView>
       )}
@@ -127,7 +164,7 @@ const removeNote = (itemId) => {
   );
 }
 
-const styled = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     backgroundColor: null,
     flex: 1,
@@ -157,7 +194,7 @@ const styled = StyleSheet.create({
   containerNota: {
     backgroundColor: "rgb(255,251,180)",
     width: "90%",
-    height: 200,
+    minHeight: 200,
     padding: 20,
     shadowColor: "#000",
     shadowOffset: {
@@ -206,5 +243,13 @@ const styled = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  //immagine
+
+  image: {
+    width: "100%",
+    height: 180,
+    resizeMode: "contain",
   },
 });

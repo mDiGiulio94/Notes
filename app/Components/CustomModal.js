@@ -32,7 +32,7 @@ const CustomModal = ({ isVisible, onConfirm, onCancel, item }) => {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styled.button, styled.btnConfirm]}
-                  onPress={item?.titolo ? () => onConfirm(item.id) : onConfirm}
+                  onPress={item?.titolo ? () => onConfirm(item) : onConfirm}
                 >
                   <ThemedText style={styled.textStyle}>
                     {item?.titolo ? "Elimina " : "Esci"}

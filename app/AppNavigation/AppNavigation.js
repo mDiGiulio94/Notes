@@ -27,6 +27,7 @@ import Note from "../Note";
 import CreateNote from "../CreateNote";
 import Login from "../Login";
 import ModificaNote from "../ModificaNote"
+import AskBot from "../AskBot"
 
 //Impostazine della navigazione
 const Stack = createNativeStackNavigator();
@@ -67,6 +68,11 @@ export default function AppNavigation({ StatiGlobali }) {
               <Stack.Screen name="ModificaNote">
                 {(props) => (
                   <ModificaNote {...props} StatiGlobali={StatiGlobali} />
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="AskBot">
+                {(props) => (
+                  <AskBot {...props} StatiGlobali={StatiGlobali} />
                 )}
               </Stack.Screen>
             </Stack.Navigator>
